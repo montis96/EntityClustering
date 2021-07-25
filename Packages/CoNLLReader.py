@@ -19,36 +19,60 @@ def read_aida_yago_conll(raw_path):
     wikidatas = []
     numeric_codes = []
     alpha_codes = []
-    for raw_word in raw_line:
+    counter = 0
+    indexes = []
+    for index, raw_word in enumerate(raw_line):
         word = raw_word.split("\t")
         if len(word[0]) > 0 and "DOCSTART" not in word[0]:
-            tokens.append(word[0])
+            # ho riunito i token che sono stati assegnati alla stessa menzione
             try:
-                tags.append(word[1])
+                if word[1] == "B":
+                    tokens.append(word[2])
             except:
-                tags.append(None)
+                tokens.append(word[0])
             try:
-                mention.append(word[2])
+                if word[1] == "B":
+                    tags.append(word[1])
             except:
-                mention.append(None)
+                tags.append('')
             try:
-                entities.append(word[3])
+                if word[1] == "B":
+                    mention.append(word[2])
             except:
-                entities.append(None)
+                mention.append('')
             try:
-                wikidatas.append(word[4])
+                if word[1] == "B":
+                    entities.append(word[3])
             except:
-                wikidatas.append(None)
+                entities.append('')
             try:
-                numeric_codes.append(word[5])
+                if word[1] == "B":
+                    wikidatas.append(word[4])
             except:
-                numeric_codes.append(None)
+                wikidatas.append('')
             try:
-                alpha_codes.append(word[6])
+                if word[1] == "B":
+                    numeric_codes.append(word[5])
             except:
-                alpha_codes.append(None)
+                numeric_codes.append('')
+            try:
+                if word[1] == "B":
+                    alpha_codes.append(word[6])
+            except:
+                alpha_codes.append('')
+            try:
+                if word[1] == "B":
+                    indexes.append((counter, counter + len(tokens[-1])))
+            except:
+                indexes.append((counter, counter + len(tokens[-1])))
+            try:
+                if word[1] == "B":
+                    counter = counter + len(tokens[-1]) + 1
+            except:
+                counter = counter + len(tokens[-1]) + 1
+
     text = " ".join(tokens)
-    indexes = list(WhitespaceTokenizer().span_tokenize(text))
-    return text, pd.DataFrame(list(zip(tokens, indexes, tags, mention, entities, wikidatas, numeric_codes, alpha_codes)),
-                        columns=["tokens", "indexes", "tags", "mention", "entities", "wikidatas", "numeric_codes",
-                                 "alpha_codes"])  # %%
+    dataframe = pd.DataFrame(list(zip(tokens, indexes, tags, mention, entities, wikidatas, numeric_codes, alpha_codes)),
+                             columns=["tokens", "indexes", "tags", "mentions", "entities", "wikidatas", "numeric_codes",
+                                      "alpha_codes"])
+    return text, dataframe
