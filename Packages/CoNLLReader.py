@@ -14,7 +14,7 @@ def read_aida_yago_conll(raw_path):
     raw_line = re.split(r'\n', raw_text)
     tokens = []
     tags = []
-    mention = []
+    mentions = []
     entities = []
     wikidatas = []
     numeric_codes = []
@@ -31,15 +31,15 @@ def read_aida_yago_conll(raw_path):
             except:
                 tokens.append(word[0])
             try:
-                if word[1] == "B":
+                if word[1] == "B" and word[4]:
                     tags.append(word[1])
             except:
                 tags.append('')
             try:
                 if word[1] == "B":
-                    mention.append(word[2])
+                    mentions.append(word[2])
             except:
-                mention.append('')
+                mentions.append('')
             try:
                 if word[1] == "B":
                     entities.append(word[3])
@@ -70,9 +70,13 @@ def read_aida_yago_conll(raw_path):
                     counter = counter + len(tokens[-1]) + 1
             except:
                 counter = counter + len(tokens[-1]) + 1
-
+    for i in range(len(tags)):
+        if entities[i] == '--NME--':
+            entities[i] = ''
+            tags[i] = ''
+            mentions[i] = ''
     text = " ".join(tokens)
-    dataframe = pd.DataFrame(list(zip(tokens, indexes, tags, mention, entities, wikidatas, numeric_codes, alpha_codes)),
+    dataframe = pd.DataFrame(list(zip(tokens, indexes, tags, mentions, entities, wikidatas, numeric_codes, alpha_codes)),
                              columns=["tokens", "indexes", "tags", "mentions", "entities", "wikidatas", "numeric_codes",
                                       "alpha_codes"])
     return text, dataframe
