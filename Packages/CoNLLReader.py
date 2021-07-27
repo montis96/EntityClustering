@@ -1,5 +1,6 @@
 import pandas as pd
 import re
+import codecs
 from pathlib import Path
 from nltk import WhitespaceTokenizer
 
@@ -10,7 +11,7 @@ Parsing del file Ayda-yago CONLL
 
 def read_aida_yago_conll(raw_path):
     path = Path(raw_path)
-    raw_text = path.read_text(encoding='utf-8').strip()
+    raw_text = codecs.open(path, "r", "unicode_escape").read()
     raw_line = re.split(r'\n', raw_text)
     tokens = []
     tags = []
