@@ -31,11 +31,14 @@ def read_aida_yago_conll(raw_path):
         word = raw_word.split("\t")
         if "DOCSTART" not in word[0]:
             if len(word[0]) > 0:
+
                 # ho riunito i token che sono stati assegnati alla stessa menzione
                 try:
                     if word[1] == "B":
-                        tokens.append(word[2])
+                        tokens.append(word[0])
                         documents.append(document)
+                    elif word[1] == "I":
+                        tokens[-1] = tokens[-1] + " " + word[0]
                 except:
                     tokens.append(word[0])
                     documents.append(document)
@@ -83,6 +86,7 @@ def read_aida_yago_conll(raw_path):
                     else:
                         word_counter = word_counter + 1
                 except:
+
                     counter = counter + len(tokens[-1]) + 1
                     word_counter = word_counter + 1
         else:
@@ -153,7 +157,7 @@ def get_context(splitted_sentence, word_index, windows=128):
         if ending_index > doc_len:
             ending_index = doc_len
     if ending_index > doc_len:
-        starting_index = starting_index - doc_len + ending_index
+        starting_index = starting_index - ending_index + doc_len
         ending_index = doc_len
         if starting_index < 0:
             starting_index = 0

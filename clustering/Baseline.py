@@ -75,6 +75,6 @@ if clustering:
 
     X = np.arange(len(mentions)).reshape(-1, 1)
     _, leven_cluster = dbscan(X, metric=lev_metric, eps=1, min_samples=0, n_jobs=-1)
-    np.savetxt('db_cluster_levestein:0_3.txt', leven_cluster, delimiter=',')
+    np.savetxt('db_cluster_levestein_0_3.txt', leven_cluster, delimiter=',')
 else:
     leven_cluster = np.loadtxt("../aida-yago2-dataset/db_cluster_levestein_3_3.txt", dtype=np.int32)
