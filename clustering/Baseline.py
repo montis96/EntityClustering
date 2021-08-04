@@ -2,7 +2,7 @@
 
 import Packages.ClusteringHelper as ch
 from tqdm import tqdm
-from Levenshtein import distance
+from textdistance import DamerauLevenshtein
 from collections import Counter
 
 #%%
@@ -15,9 +15,11 @@ if save:
     text_file.write(text)
     text_file.close()
 data
+
 #%%
 
 data = ch.filter_data(data, 3)
+data
 
 #%% md
 
@@ -44,11 +46,14 @@ print('{0:<35} {1:>10} '.format("1 entità ogni:", round(n_tokens / n_entities, 
 #%%
 
 golden_standard_dict = ch.get_gold_standard_dict(data)
+
 #%%
+
 ents_data = data[data['entities'] != '']
 golden_standard_entities = ents_data['entities'].values
 mentions = ents_data['mentions'].values
 mentions = [x.lower() for x in mentions]
+
 
 #%% md
 
@@ -68,13 +73,13 @@ if clustering:
             if mentions[i] == mentions[j]:
                 return 0
             else:
-                return distance(mentions[i].lower(), mentions[j].lower()) + 3
+                return DamerauLevenshtein().distance(mentions[i].lower(), mentions[j].lower()) + 3
         else:
-            return distance(mentions[i].lower(), mentions[j].lower())
+            return DamerauLevenshtein().distance(mentions[i].lower(), mentions[j].lower())
 
 
     X = np.arange(len(mentions)).reshape(-1, 1)
     _, leven_cluster = dbscan(X, metric=lev_metric, eps=1, min_samples=0, n_jobs=-1)
     np.savetxt('db_cluster_levestein_0_3.txt', leven_cluster, delimiter=',')
 else:
-    leven_cluster = np.loadtxt("../aida-yago2-dataset/db_cluster_levestein_3_3.txt", dtype=np.int32)
+    leven_cluster = np.loadtxt("../aida-yago2-dataset/db_cluster_levestein_0_3.txt", dtype=np.int32)

@@ -191,4 +191,6 @@ def calculate_context_vector(model, cluster, text_splitted, doc_window=20, windo
         word_context_mean = word_context_mean / (window - null_counter)
         final_mean = word_context_mean * word_context_aplha + doc_context_mean * doc_context_alpha
         contexts_vectorized.append(final_mean)
+
+
     return contexts_vectorized
