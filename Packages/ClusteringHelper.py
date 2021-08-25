@@ -124,8 +124,8 @@ def get_gold_standard_dict(dataframe):
 
 def filter_data(dataframe, min_el):
     new_df = dataframe.copy()
-    entities = new_df['entities']
-    mentions = new_df['mentions']
+    entities = new_df['entities'].values
+    mentions = new_df['mentions'].values
     not_allowed = []
     from collections import Counter
     ent_dict = Counter(entities)
