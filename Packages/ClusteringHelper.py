@@ -143,6 +143,7 @@ def filter_data(dataframe, min_el):
             new_mentions.append(mentions[x])
     new_df['entities'] = new_entities
     new_df['mentions'] = new_mentions
+    new_df = new_df[new_df['entities'] != ''].copy()
     return new_df
 
 
@@ -194,6 +195,25 @@ def calculate_context_vector(model, cluster, text_splitted, doc_window=20, windo
     return contexts_vectorized
 
 
+def add_entities_embedding(data, embedding_path):
+    from pathlib import Path
+    base_path = Path(embedding_path)
+    path_train = base_path / "AIDA-YAGO2_train_encodings.jsonl"
+    path_testa = base_path / "AIDA-YAGO2_testa_encodings.jsonl"
+    path_testb = base_path / "AIDA-YAGO2_testb_encodings.jsonl"
+    raw_encodings_train = open(path_train, 'r').read()
+    raw_encodings_testa = open(path_testa, 'r').read()
+    raw_encodings_testb = open(path_testb, 'r').read()
+    import json
+    jsonl_parsed_train = [json.loads(x) for x in raw_encodings_train.splitlines()]
+    jsonl_parsed_testa = [json.loads(x) for x in raw_encodings_testa.splitlines()]
+    jsonl_parsed_testb = [json.loads(x) for x in raw_encodings_testb.splitlines()]
+    jsonl_parsed = jsonl_parsed_train + jsonl_parsed_testa + jsonl_parsed_testb
+    encodings = [x['encoding'] for x in jsonl_parsed]
+    data = data.copy()
+    data['encodings'] = encodings
+    return data
+
 def get_optimal_alignment(cluster, gold_entities, is_dict=True):
     ent_cluster_matrix = []
     if is_dict:
@@ -223,3 +243,5 @@ def get_optimal_alignment(cluster, gold_entities, is_dict=True):
         max_lev_cluster_dict[ent_cluster_matrix.columns[ent_index]] = ent_cluster_matrix.iloc[
             best_alignment_cluster[i], best_alignment_ent[i]]
     return max_lev_cluster_dict
+
+
