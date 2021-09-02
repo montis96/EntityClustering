@@ -32,11 +32,3 @@ class DataEvolverIterator:
             raise StopIteration
         self._evolver.current_docs = to_return
         return to_return
-
-
-class Cluster:
-    def __init__(self, name, mentions, entities, encodings):
-        self.name = name
-        self.encodings = encodings
-        self.mentions = mentions
-        self.entities = entities
