@@ -214,7 +214,9 @@ def add_entities_embedding(data, embedding_path):
     data['encodings'] = encodings
     return data
 
+
 def get_optimal_alignment(cluster, gold_entities, is_dict=True):
+    gold_entities = set(gold_entities)
     ent_cluster_matrix = []
     if is_dict:
         for key in cluster.keys():
@@ -225,7 +227,7 @@ def get_optimal_alignment(cluster, gold_entities, is_dict=True):
                 except:
                     matrix_row.append(0)
             ent_cluster_matrix.append(matrix_row)
-    else: #se non è un dict allora è una lista
+    else:  # se non è un dict allora è una lista
         for row in cluster:
             matrix_row = []
             for ent in set(gold_entities):
@@ -243,5 +245,3 @@ def get_optimal_alignment(cluster, gold_entities, is_dict=True):
         max_lev_cluster_dict[ent_cluster_matrix.columns[ent_index]] = ent_cluster_matrix.iloc[
             best_alignment_cluster[i], best_alignment_ent[i]]
     return max_lev_cluster_dict
-
-
