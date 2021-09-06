@@ -3,7 +3,7 @@ import numpy as np
 
 
 class DataEvolver:
-    def __init__(self, documents, data, step=3, randomly=False):
+    def __init__(self, documents, data, step=3, randomly=False, seed=None):
         import random
 
         self.step = step
@@ -13,7 +13,10 @@ class DataEvolver:
         self.done_docs = set()
         self.docs_stream = list(documents)
         if randomly:
-            random.shuffle(self.docs_stream)
+            if seed is not None:
+                random.Random(seed).shuffle(self.docs_stream)
+            else:
+                random.shuffle(self.docs_stream)
         self.current_docs = []
 
     def __iter__(self):
