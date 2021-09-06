@@ -1,7 +1,0 @@
-step: 10
-first_threshold: 0.035
-second_threshold: 0.015
-randomly: False
-time:4587.0505885
-
-ciao:
