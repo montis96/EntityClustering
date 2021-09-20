@@ -1,5 +1,5 @@
 import sys
-
+sys.path.append('.')
 sys.path.append('..')
 import Packages.ClusteringHelper as ch
 from textdistance import DamerauLevenshtein
