@@ -1,0 +1,1 @@
+conda activate entity_clustering && python .\evolving_clustering\script.py --step=10 --first_threshold="0.035" --second_threshold="0.015" --randomly --seed="42"

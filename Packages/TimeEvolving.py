@@ -55,7 +55,8 @@ class Cluster:
         self.entities = entities
         self.count_ments = Counter(self.mentions)
         self.count_ents = Counter(self.entities)
-        self.encodings_mean = np.mean(self.encodings_list, axis=0) if len(self.encodings_list) > 0 else np.zeros(1024)
+        self.encodings_mean = np.mean(self.encodings_list, axis=0) if len(self.encodings_list) > 0 else np.array([])
+        self.encodings_median = np.median(self.encodings_list, axis=0) if len(self.encodings_list) > 0 else np.array([])
         self.n_elements = len(self.mentions)
 
     def add_element(self, mention, entity, encodings):
@@ -65,6 +66,7 @@ class Cluster:
         self.count_ments = Counter(self.mentions)
         self.count_ents = Counter(self.entities)
         self.encodings_mean = np.mean(self.encodings_list, axis=0)
+        self.encodings_median = np.median(self.encodings_list, axis=0)
         self.n_elements = len(self.mentions)
 
     def __add__(self, other):
@@ -72,7 +74,17 @@ class Cluster:
                        encodings_list=self.encodings_list + other.encodings_list)
 
     def __repr__(self):
-        return "Cluster" + self.count_ents.__repr__()
+        return "Cluster" + self.print_to_html().__repr__() + "; #_elements = " + str(len(self.mentions))
 
     def __str__(self):
-        return "Cluster" + self.count_ents.__str__()
+        return "Cluster" + self.print_to_html().__str__() + '; <span style="background: pink;">#_elements</span> = ' + str(
+            len(self.mentions))
+
+    def print_to_html(self):
+        to_print = {"<b>" + x + "</b>": [] for x in set(self.entities)}
+        for index in range(len(self.entities)):
+            to_print["<b>" + self.entities[index] + "</b>"].append(self.mentions[index])
+        for key in to_print:
+            to_print[key] = dict(Counter(to_print[key]))
+            to_print[key]['<span style="background: yellow;">#</span>'] = sum(to_print[key].values())
+        return to_print

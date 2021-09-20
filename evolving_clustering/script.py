@@ -2,6 +2,7 @@ import getopt
 import sys
 
 sys.path.append('.')
+
 import Packages.ClusteringHelper as ch
 from Packages.TimeEvolving import DataEvolver
 from textdistance import DamerauLevenshtein, Levenshtein
@@ -12,24 +13,28 @@ from tqdm import tqdm
 import math
 from collections import Counter
 import datetime, time, os
+from sklearn.metrics.pairwise import pairwise_distances
 
 
 def main(argv):
     original_stdout = sys.stdout
     now = datetime.datetime.now().strftime('%Y-%m-%d_%H_%M_%S')
-    opts, _ = getopt.getopt(argv, "s:ft:st:r", ["step", "first_threshold=", "second_threshold=", "randomly"])
+    opts, _ = getopt.getopt(argv, "s:f:e:r:d", ["step=", "first_threshold=", "second_threshold=", "randomly", "seed="])
     step = 10
     first_threshold = 0.035
     second_threshold = 0.015
+    seed = None
     randomly = False
     os.makedirs(".\\Results\\" + now)
     for opt, arg in opts:
-        if opt in ("s", "step"):
+        if opt in ("-s", "--step"):
             step = int(arg)
         elif opt in ("-ft", "--first_threshold"):
             first_threshold = float(arg)
         elif opt in ("-st", "--second_threshold"):
             second_threshold = float(arg)
+        elif opt in ("-sd", "--seed"):
+            seed = int(arg)
         elif opt in ("-r", "--randomly"):
             randomly = True
 
@@ -38,7 +43,10 @@ def main(argv):
         print('step:', step)
         print('first_threshold:', first_threshold)
         print('second_threshold:', second_threshold)
+        print('seed:', seed)
         print('randomly:', randomly)
+        print('Mean')
+        print('Full_HAC')
         sys.stdout = original_stdout
     text, data = ch.read_aida_yago_conll(
         "D:\\Sgmon\\Documents\\Magistrale\\TESI\\ClusteringAndLinking\\aida-yago2-dataset\\AIDA-YAGO2-dataset.tsv")
@@ -54,7 +62,7 @@ def main(argv):
     ents_data_filtered = ents_data.copy()
     documents = set(ents_data.documents)
 
-    evolving = DataEvolver(documents, ents_data, randomly=randomly, step=step)
+    evolving = DataEvolver(documents, ents_data, randomly=randomly, step=step, seed=seed)
     gold_entities = []
     total_clusters = []
     n = 0
@@ -88,8 +96,12 @@ def main(argv):
                 return DamerauLevenshtein().distance(current_mentions[i].lower(), current_mentions[j].lower())
 
         X = np.arange(len(current_mentions)).reshape(-1, 1)
-        clusterizator1 = DBSCAN(metric=lev_metric, eps=1, min_samples=0, n_jobs=-1)
-        cluster_numbers = clusterizator1.fit_predict(X)
+        m_matrix = pairwise_distances(X, X, metric=dam_lev_metric, n_jobs=-1)
+        # clusterizator1 = DBSCAN(metric=dam_lev_metric, eps=1, min_samples=0, n_jobs=-1)
+        clusterizator1 = AgglomerativeClustering(n_clusters=None, affinity='precomputed',
+                                                 distance_threshold=1,
+                                                 linkage="single")
+        cluster_numbers = clusterizator1.fit_predict(m_matrix)
 
         cee_dict = {k: {'entities': [], 'mentions': [], 'encodings': [], 'sotto_clusters': None} for k in
                     set(cluster_numbers)}
@@ -134,21 +146,28 @@ def main(argv):
         best_alignment = ch.get_optimal_alignment([x.count_ents for x in total_clusters], set(gold_entities),
                                                   is_dict=False)
         CEAFm_f1 = sum(best_alignment.values()) / len(gold_entities)
-        with open(".\\Results\\" + now + "\\step" + str(n) + ".txt", "a", encoding='utf-8') as f:
+        with open(".\\Results\\" + now + "\\step" + str(n) + ".html", "a", encoding='utf-8') as f:
             sys.stdout = f
-            print("CEAFm:", CEAFm_f1)
-            print("Clusters:")
-            print(final_clusters)
-            print("Gold_standard:")
-            print(Counter(gold_entities))
+            print('<html>')
+            print("Documents:", iteration, '<br>')
+            print("CEAFm:", CEAFm_f1, '<br>')
+            print("Clusters:", '<br>')
+            print(*total_clusters, sep=" <br><br> ")
+            print("<br>")
+            print("<br>")
+            print("Gold_standard:", '<br>')
+            print(dict(Counter(gold_entities)))
+            print('</html>')
             sys.stdout = original_stdout
         n = n + 1
+
     toc = time.perf_counter()
     with open(".\\Results\\" + now + "\\settings.txt", "a") as f:
         sys.stdout = f
         print('time:', toc - tic)
         sys.stdout = original_stdout
     print("Time:", toc - tic)
+
 
 
 if __name__ == "__main__":
