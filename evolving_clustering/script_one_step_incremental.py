@@ -18,9 +18,9 @@ from collections import Counter
 def main():
     original_stdout = sys.stdout
     now = datetime.datetime.now().strftime('%Y-%m-%d_%H_%M_%S')
-    os.makedirs(".\\Results_one_step\\" + now)
+    os.makedirs("./Results_one_step/" + now)
     text, data = ch.read_aida_yago_conll(
-        ".\\aida-yago2-dataset\\AIDA-YAGO2-dataset.tsv")
+        "./aida-yago2-dataset/AIDA-YAGO2-dataset.tsv")
     save = False
     if save:
         text_file = open('text.txt', 'w')
@@ -28,7 +28,7 @@ def main():
         text_file.close()
     ents_data = data[data['entities'] != ''].copy()
     ents_data = ch.add_entities_embedding(ents_data,
-                                          ".\\aida-yago2-dataset\\encodings")
+                                          "./aida-yago2-dataset/encodings")
     documents = set(ents_data.documents)
     evolving = DataEvolver(documents, ents_data, randomly=True, step=10, seed=42)
     gold_entities = []
@@ -59,7 +59,7 @@ def main():
         m_matrix = pairwise_distances(X, X, metric=distance_metric, n_jobs=-1)
         clusterizator1 = AgglomerativeClustering(n_clusters=None, affinity='precomputed',
                                                  distance_threshold=0.25,
-                                                 linkage="single", memory='.\\cache')
+                                                 linkage="single", memory='./cache')
         cluster_numbers = clusterizator1.fit_predict(m_matrix)
         cluster_dict = {x: Cluster() for x in set(cluster_numbers)}
         for index, x in enumerate(cluster_numbers):
@@ -71,7 +71,7 @@ def main():
         CEAFm_p = sum(best_alignment.values()) / len(gold_entities)
         CEAFm_r = sum(best_alignment.values()) / sum([x.n_elements for x in total_clusters])
         CEAFm_f1 = 2 * (CEAFm_p * CEAFm_r) / (CEAFm_p + CEAFm_r)
-        with open(".\\Results_one_step\\" + now + "\\step" + str(n) + ".html", "a", encoding='utf-8') as f:
+        with open("./Results_one_step/" + now + "/step" + str(n) + ".html", "a", encoding='utf-8') as f:
             sys.stdout = f
             print('<html>')
             print("Documents:", iteration, '<br>')
