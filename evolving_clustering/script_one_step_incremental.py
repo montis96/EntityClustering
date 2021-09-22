@@ -3,7 +3,7 @@ import sys
 sys.path.append('.')
 import Packages.ClusteringHelper as ch
 from Packages.TimeEvolving import DataEvolver
-from textdistance import DamerauLevenshtein, Levenshtein
+from textdistance import DamerauLevenshtein, JaroWinkler
 import numpy as np
 from sklearn.cluster import  AgglomerativeClustering
 from Packages.TimeEvolving import Cluster
@@ -48,7 +48,7 @@ def main():
 
         def distance_metric(x, y):
             i, j = int(x[0]), int(y[0])  # extract indices
-            sintact_distance_list = [DamerauLevenshtein().normalized_distance(el1, el2)
+            sintact_distance_list = [JaroWinkler().distance(el1, el2)
                                      for el1 in total_clusters[i].unique_mentions for el2 in
                                      total_clusters[j].unique_mentions]
             sintact_distance = np.mean(sintact_distance_list)
