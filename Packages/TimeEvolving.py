@@ -58,6 +58,7 @@ class Cluster:
         self.encodings_mean = np.mean(self.encodings_list, axis=0) if len(self.encodings_list) > 0 else np.array([])
         self.encodings_median = np.median(self.encodings_list, axis=0) if len(self.encodings_list) > 0 else np.array([])
         self.n_elements = len(self.mentions)
+        self.unique_mentions = list(set([x.lower() for x in self.mentions]))
 
     def add_element(self, mention, entity, encodings):
         self.mentions.append(mention)
@@ -68,6 +69,8 @@ class Cluster:
         self.encodings_mean = np.mean(self.encodings_list, axis=0)
         self.encodings_median = np.median(self.encodings_list, axis=0)
         self.n_elements = len(self.mentions)
+        self.unique_mentions = list(set([x.lower() for x in self.mentions]))
+
 
     def __add__(self, other):
         return Cluster(mentions=self.mentions + other.mentions, entities=self.entities + other.entities,

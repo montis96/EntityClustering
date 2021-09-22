@@ -47,6 +47,7 @@ def main(argv):
         print('randomly:', randomly)
         print('Mean')
         print('Full_HAC')
+        print('Threshold elimination cluster: 17 different mentions')
         sys.stdout = original_stdout
     text, data = ch.read_aida_yago_conll(
         "D:\\Sgmon\\Documents\\Magistrale\\TESI\\ClusteringAndLinking\\aida-yago2-dataset\\AIDA-YAGO2-dataset.tsv")
@@ -141,16 +142,21 @@ def main(argv):
                 print(cluster_numbers[i], final_clusters[cluster_numbers[i]], x)
         gold_entities = gold_entities + current_entities
         total_clusters = list(final_clusters.values())
+        total_clusters = [x for x in total_clusters if len(set(x.mentions)) < 15]
 
         # CEAFm
         best_alignment = ch.get_optimal_alignment([x.count_ents for x in total_clusters], set(gold_entities),
                                                   is_dict=False)
-        CEAFm_f1 = sum(best_alignment.values()) / len(gold_entities)
+        CEAFm_p = sum(best_alignment.values()) / len(gold_entities)
+        CEAFm_r = sum(best_alignment.values()) / sum([x.n_elements for x in total_clusters])
+        CEAFm_f1 = 2 * (CEAFm_p * CEAFm_r) / (CEAFm_p + CEAFm_r)
         with open(".\\Results\\" + now + "\\step" + str(n) + ".html", "a", encoding='utf-8') as f:
             sys.stdout = f
             print('<html>')
             print("Documents:", iteration, '<br>')
-            print("CEAFm:", CEAFm_f1, '<br>')
+            print("CEAFm-R:", CEAFm_r)
+            print("CEAFm-P:", CEAFm_p)
+            print("CEAFm:", CEAFm_f1)
             print("Clusters:", '<br>')
             print(*total_clusters, sep=" <br><br> ")
             print("<br>")
@@ -167,7 +173,6 @@ def main(argv):
         print('time:', toc - tic)
         sys.stdout = original_stdout
     print("Time:", toc - tic)
-
 
 
 if __name__ == "__main__":

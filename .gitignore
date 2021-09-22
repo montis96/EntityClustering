@@ -1,3 +1,6 @@
 /aida-yago2-dataset/
 /.idea/
 /Results/
+/dbscan_full/dbscan_lev_cosine.txt
+/dbscan_full/settings.txt
+/Results_one_step/
