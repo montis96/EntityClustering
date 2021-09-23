@@ -5,7 +5,7 @@ sys.path.append('.')
 
 import Packages.ClusteringHelper as ch
 from Packages.TimeEvolving import DataEvolver
-from textdistance import DamerauLevenshtein, Levenshtein
+from textdistance import DamerauLevenshtein, Levenshtein, JaroWinkler
 import numpy as np
 from sklearn.cluster import DBSCAN, AgglomerativeClustering
 from Packages.TimeEvolving import Cluster
@@ -47,7 +47,8 @@ def main(argv):
         print('randomly:', randomly)
         print('Mean')
         print('Full_HAC')
-        print('Threshold elimination cluster: 17 different mentions')
+        print('Jaro_winkler = 0.2')
+        # print('Threshold elimination cluster: 15 different mentions')
         sys.stdout = original_stdout
     text, data = ch.read_aida_yago_conll(
         "D:\\Sgmon\\Documents\\Magistrale\\TESI\\ClusteringAndLinking\\aida-yago2-dataset\\AIDA-YAGO2-dataset.tsv")
@@ -96,11 +97,15 @@ def main(argv):
             else:
                 return DamerauLevenshtein().distance(current_mentions[i].lower(), current_mentions[j].lower())
 
+        def jw_lev_metric(x, y):
+            i, j = int(x[0]), int(y[0])  # extract indices
+            return JaroWinkler().distance(current_mentions[i].lower(), current_mentions[j].lower())
+
         X = np.arange(len(current_mentions)).reshape(-1, 1)
-        m_matrix = pairwise_distances(X, X, metric=dam_lev_metric, n_jobs=-1)
+        m_matrix = pairwise_distances(X, X, metric=jw_lev_metric, n_jobs=-1)
         # clusterizator1 = DBSCAN(metric=dam_lev_metric, eps=1, min_samples=0, n_jobs=-1)
         clusterizator1 = AgglomerativeClustering(n_clusters=None, affinity='precomputed',
-                                                 distance_threshold=1,
+                                                 distance_threshold=0.2,
                                                  linkage="single")
         cluster_numbers = clusterizator1.fit_predict(m_matrix)
 
@@ -142,7 +147,7 @@ def main(argv):
                 print(cluster_numbers[i], final_clusters[cluster_numbers[i]], x)
         gold_entities = gold_entities + current_entities
         total_clusters = list(final_clusters.values())
-        total_clusters = [x for x in total_clusters if len(set(x.mentions)) < 15]
+        # total_clusters = [x for x in total_clusters if len(set(x.mentions)) < 15]
 
         # CEAFm
         best_alignment = ch.get_optimal_alignment([x.count_ents for x in total_clusters], set(gold_entities),

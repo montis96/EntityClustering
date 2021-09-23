@@ -2,7 +2,7 @@ import sys
 
 sys.path.append('.')
 import Packages.ClusteringHelper as ch
-from textdistance import DamerauLevenshtein
+from textdistance import JaroWinkler
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import pairwise_distances
@@ -19,7 +19,7 @@ def main():
     golden_standard_dict = ch.get_gold_standard_dict(data)
 
     ents_data = data[data['entities'] != '']
-    golden_standard_entities = ents_data['entities'].values
+    # golden_standard_entities = ents_data['entities'].values
     mentions = ents_data['mentions'].values
     mentions = [x.lower() for x in mentions]
 
@@ -29,9 +29,9 @@ def main():
             if mentions[i] == mentions[j]:
                 return 0
             else:
-                return DamerauLevenshtein().distance(mentions[i].lower(), mentions[j].lower()) + 3
+                return JaroWinkler().distance(mentions[i].lower(), mentions[j].lower()) + 3
         else:
-            return DamerauLevenshtein().distance(mentions[i].lower(), mentions[j].lower())
+            return JaroWinkler().distance(mentions[i].lower(), mentions[j].lower())
 
     X = np.arange(len(mentions)).reshape(-1, 1)
     print("Inizio il pairwise")
@@ -40,7 +40,7 @@ def main():
     print("Finito il pairwise")
 
     clusterizator1 = AgglomerativeClustering(n_clusters=None, affinity='precomputed',
-                                             distance_threshold=1,
+                                             distance_threshold=0.2,
                                              linkage="single")
     cluster_numbers = clusterizator1.fit_predict(m_matrix)
     np.savetxt('db_cluster_dam_agglom.txt', cluster_numbers, delimiter=',')
