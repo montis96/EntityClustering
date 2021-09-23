@@ -9,7 +9,7 @@ from sklearn.metrics import pairwise_distances
 
 def main():
     text, data = ch.read_aida_yago_conll(
-        "D:\\Sgmon\\Documents\\Magistrale\\TESI\\ClusteringAndLinking\\aida-yago2-dataset\\AIDA-YAGO2-dataset.tsv")
+        "./aida-yago2-dataset/AIDA-YAGO2-dataset.tsv")
 
     data = ch.filter_data(data, 3)
     n_entities = sum([x is not '' for x in list(data['entities'])])
