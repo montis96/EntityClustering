@@ -43,7 +43,7 @@ def main():
                                              distance_threshold=0.2,
                                              linkage="single")
     cluster_numbers = clusterizator1.fit_predict(m_matrix)
-    np.savetxt('db_cluster_dam_agglom.txt', cluster_numbers, delimiter=',')
+    np.savetxt('damerau_all.txt', cluster_numbers, delimiter=',')
 
 
 if __name__ == "__main__":
