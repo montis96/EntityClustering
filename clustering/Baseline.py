@@ -2,7 +2,7 @@ import sys
 
 sys.path.append('.')
 import Packages.ClusteringHelper as ch
-from textdistance import JaroWinkler
+from textdistance import DamerauLevenshtein
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import pairwise_distances
@@ -29,9 +29,9 @@ def main():
             if mentions[i] == mentions[j]:
                 return 0
             else:
-                return JaroWinkler().distance(mentions[i].lower(), mentions[j].lower()) + 3
+                return DamerauLevenshtein().distance(mentions[i].lower(), mentions[j].lower()) + 3
         else:
-            return JaroWinkler().distance(mentions[i].lower(), mentions[j].lower())
+            return DamerauLevenshtein().distance(mentions[i].lower(), mentions[j].lower())
 
     X = np.arange(len(mentions)).reshape(-1, 1)
     print("Inizio il pairwise")
