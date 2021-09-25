@@ -26,10 +26,10 @@ def main():
     print("Finito il pairwise")
 
     clusterizator1 = AgglomerativeClustering(n_clusters=None, affinity='precomputed',
-                                             distance_threshold=0.2,
+                                             distance_threshold=1,
                                              linkage="single")
-    cluster_numbers = clusterizator1.fit_predict(X)
-    np.savetxt('prova.txt', cluster_numbers, delimiter=',')
+    cluster_numbers = clusterizator1.fit_predict(m_matrix)
+    np.savetxt('damerau_1.txt', cluster_numbers, delimiter=',')
 
 
 if __name__ == "__main__":
