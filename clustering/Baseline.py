@@ -2,7 +2,7 @@ import sys
 
 sys.path.append('.')
 import Packages.ClusteringHelper as ch
-from textdistance import JaroWinkler
+from textdistance import DamerauLevenshtein
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering, DBSCAN
 from sklearn.metrics import pairwise_distances
@@ -17,7 +17,13 @@ def main():
 
     def lev_metric(x, y):
         i, j = int(x[0]), int(y[0])  # extract indices
-        return JaroWinkler().distance(mentions[i].lower(), mentions[j].lower())
+        if len(mentions[i]) < 4:
+            if mentions[i] == mentions[j]:
+                return 0
+            else:
+                return DamerauLevenshtein().distance(mentions[i].lower(), mentions[j].lower()) + 3
+        else:
+            return DamerauLevenshtein().distance(mentions[i].lower(), mentions[j].lower())
 
     X = np.arange(len(mentions)).reshape(-1, 1)
     print("Inizio il pairwise")
