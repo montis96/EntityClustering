@@ -25,7 +25,7 @@ def main(argv):
     second_threshold = 0.015
     seed = None
     randomly = False
-    os.makedirs(".\\Results\\" + now)
+    os.makedirs("./Results/" + now)
     for opt, arg in opts:
         if opt in ("-s", "--step"):
             step = int(arg)
