@@ -1,0 +1,8 @@
+step: 10
+first_threshold: 0.035
+second_threshold: 0.015
+seed: None
+randomly: False
+Mean
+Full_HAC
+Levenshtein = 1

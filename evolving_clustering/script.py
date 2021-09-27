@@ -47,7 +47,7 @@ def main(argv):
         print('randomly:', randomly)
         print('Mean')
         print('Full_HAC')
-        print('Jaro_winkler = 0.2')
+        print('Levenshtein = 1')
         # print('Threshold elimination cluster: 15 different mentions')
         sys.stdout = original_stdout
     text, data = ch.read_aida_yago_conll(
@@ -61,7 +61,7 @@ def main(argv):
 
     ents_data = ch.add_entities_embedding(ents_data,
                                           "D:\\Sgmon\\Documents\\Magistrale\\TESI\\ClusteringAndLinking\\aida-yago2-dataset\\encodings")
-    ents_data_filtered = ents_data.copy()
+    # ents_data_filtered = ents_data.copy()
     documents = set(ents_data.documents)
 
     evolving = DataEvolver(documents, ents_data, randomly=randomly, step=step, seed=seed)
@@ -102,7 +102,7 @@ def main(argv):
             return JaroWinkler().distance(current_mentions[i].lower(), current_mentions[j].lower())
 
         X = np.arange(len(current_mentions)).reshape(-1, 1)
-        m_matrix = pairwise_distances(X, X, metric=jw_lev_metric, n_jobs=-1)
+        m_matrix = pairwise_distances(X, X, metric=lev_metric, n_jobs=-1)
         # clusterizator1 = DBSCAN(metric=dam_lev_metric, eps=1, min_samples=0, n_jobs=-1)
         clusterizator1 = AgglomerativeClustering(n_clusters=None, affinity='precomputed',
                                                  distance_threshold=0.2,
@@ -134,7 +134,7 @@ def main(argv):
         sottocluster_list = [clusters_dict[key] for clusters_dict in sottocluster_list for key in clusters_dict]
 
         current_clusters = total_clusters + sottocluster_list
-        sotto_encodings = [x.encodings_mean for x in current_clusters]
+        sotto_encodings = [x.encodings_mean() for x in current_clusters]
         clusterizator3 = AgglomerativeClustering(n_clusters=None, affinity='cosine',
                                                  distance_threshold=second_threshold,
                                                  linkage="single")
@@ -149,11 +149,15 @@ def main(argv):
         total_clusters = list(final_clusters.values())
         # total_clusters = [x for x in total_clusters if len(set(x.mentions)) < 15]
 
+
+        # BCUBED
+        list_of_counter = [x.count_ents() for x in total_clusters]
+
         # CEAFm
-        best_alignment = ch.get_optimal_alignment([x.count_ents for x in total_clusters], set(gold_entities),
+        best_alignment = ch.get_optimal_alignment([x.count_ents() for x in total_clusters], set(gold_entities),
                                                   is_dict=False)
         CEAFm_p = sum(best_alignment.values()) / len(gold_entities)
-        CEAFm_r = sum(best_alignment.values()) / sum([x.n_elements for x in total_clusters])
+        CEAFm_r = sum(best_alignment.values()) / sum([x.n_elements() for x in total_clusters])
         CEAFm_f1 = 2 * (CEAFm_p * CEAFm_r) / (CEAFm_p + CEAFm_r)
         with open(".\\Results\\" + now + "\\step" + str(n) + ".html", "a", encoding='utf-8') as f:
             sys.stdout = f
