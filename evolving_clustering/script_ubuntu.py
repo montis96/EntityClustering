@@ -38,7 +38,7 @@ def main(argv):
         elif opt in ("-r", "--randomly"):
             randomly = True
 
-    with open(".\\Results\\" + now + "\\settings.txt", "a") as f:
+    with open("./Results/" + now + "/settings.txt", "a") as f:
         sys.stdout = f
         print('step:', step)
         print('first_threshold:', first_threshold)
@@ -47,11 +47,11 @@ def main(argv):
         print('randomly:', randomly)
         print('Mean')
         print('Full_HAC')
-        print('Levenshtein = 1')
+        print('Damerau = 1')
         print('Threshold elimination cluster: 15 different mentions')
         sys.stdout = original_stdout
     text, data = ch.read_aida_yago_conll(
-        "D:\\Sgmon\\Documents\\Magistrale\\TESI\\ClusteringAndLinking\\aida-yago2-dataset\\AIDA-YAGO2-dataset.tsv")
+        "./aida-yago2-dataset/AIDA-YAGO2-dataset.tsv")
     save = False
     if save:
         text_file = open('text.txt', 'w')
@@ -60,7 +60,7 @@ def main(argv):
     ents_data = data[data['entities'] != ''].copy()
 
     ents_data = ch.add_entities_embedding(ents_data,
-                                          "D:\\Sgmon\\Documents\\Magistrale\\TESI\\ClusteringAndLinking\\aida-yago2-dataset\\encodings")
+                                          "./aida-yago2-dataset/encodings")
     # ents_data_filtered = ents_data.copy()
     documents = set(ents_data.documents)
 
@@ -159,7 +159,7 @@ def main(argv):
         CEAFm_p = sum(best_alignment.values()) / len(gold_entities)
         CEAFm_r = sum(best_alignment.values()) / sum([x.n_elements() for x in total_clusters])
         CEAFm_f1 = 2 * (CEAFm_p * CEAFm_r) / (CEAFm_p + CEAFm_r)
-        with open(".\\Results\\" + now + "\\step" + str(n) + ".html", "a", encoding='utf-8') as f:
+        with open("./Results/" + now + "/step" + str(n) + ".html", "a", encoding='utf-8') as f:
             sys.stdout = f
             print('<html>')
             print("Documents:", iteration, '<br>')
@@ -181,7 +181,7 @@ def main(argv):
         n = n + 1
 
     toc = time.perf_counter()
-    with open(".\\Results\\" + now + "\\settings.txt", "a") as f:
+    with open("./Results/" + now + "/settings.txt", "a") as f:
         sys.stdout = f
         print('time:', toc - tic)
         sys.stdout = original_stdout
