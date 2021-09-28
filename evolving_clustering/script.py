@@ -4,7 +4,7 @@ import sys
 sys.path.append('.')
 
 import Packages.ClusteringHelper as ch
-from Packages.TimeEvolving import DataEvolver
+from Packages.TimeEvolving import DataEvolver, compare_ecoding
 from textdistance import DamerauLevenshtein, Levenshtein, JaroWinkler
 import numpy as np
 from sklearn.cluster import DBSCAN, AgglomerativeClustering
@@ -47,11 +47,12 @@ def main(argv):
         print('randomly:', randomly)
         print('Mean')
         print('Full_HAC')
-        print('Levenshtein = 1')
-        print('Threshold elimination cluster: 15 different mentions')
+        print('DamerauLevenshtein = 1')
+        # print('Threshold elimination cluster: 15 different mentions')
+        # print('Threshold dot_product')
         sys.stdout = original_stdout
     text, data = ch.read_aida_yago_conll(
-        "D:\\Sgmon\\Documents\\Magistrale\\TESI\\ClusteringAndLinking\\aida-yago2-dataset\\AIDA-YAGO2-dataset.tsv")
+        ".\\aida-yago2-dataset\\AIDA-YAGO2-dataset.tsv")
     save = False
     if save:
         text_file = open('text.txt', 'w')
@@ -60,7 +61,7 @@ def main(argv):
     ents_data = data[data['entities'] != ''].copy()
 
     ents_data = ch.add_entities_embedding(ents_data,
-                                          "D:\\Sgmon\\Documents\\Magistrale\\TESI\\ClusteringAndLinking\\aida-yago2-dataset\\encodings")
+                                          ".\\aida-yago2-dataset\\encodings")
     # ents_data_filtered = ents_data.copy()
     documents = set(ents_data.documents)
 
@@ -74,8 +75,8 @@ def main(argv):
     tic = time.perf_counter()
     for iteration in tqdm(evolving, total=math.ceil(len(evolving.documents) / evolving.step)):
         current_mentions = list(evolving.get_current_data().mentions)
-        current_encodings = list(evolving.get_current_data()['encodings'].values)
-        current_entities = list(evolving.get_current_data()['entities'].values)
+        current_encodings = list(evolving.get_current_data()['encodings'])
+        current_entities = list(evolving.get_current_data()['entities'])
 
         def lev_metric(x, y):
             i, j = int(x[0]), int(y[0])  # extract indices
@@ -140,11 +141,14 @@ def main(argv):
                                                  linkage="single")
         cluster_numbers = clusterizator3.fit_predict(sotto_encodings)
         final_clusters = {k: Cluster() for k in set(cluster_numbers)}
+        last_key = list(set(final_clusters.keys()))[-1]
         for i, x in enumerate(current_clusters):
-            try:
+            if compare_ecoding(final_clusters[cluster_numbers[i]], x):
                 final_clusters[cluster_numbers[i]] = final_clusters[cluster_numbers[i]] + x
-            except:
-                print(cluster_numbers[i], final_clusters[cluster_numbers[i]], x)
+            else:
+                last_key = last_key + 1
+                final_clusters[last_key] = x
+
         gold_entities = gold_entities + current_entities
         total_clusters = list(final_clusters.values())
         total_clusters = [x for x in total_clusters if len(set([men.lower() for men in x.mentions])) < 15]

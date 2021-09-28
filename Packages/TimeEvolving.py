@@ -96,3 +96,15 @@ class Cluster:
             to_print[key] = dict(Counter(to_print[key]))
             to_print[key]['<span style="background: yellow;">#</span>'] = sum(to_print[key].values())
         return to_print
+
+
+def compare_ecoding(cluster1, cluster2):
+    if cluster1.n_elements() == 0:
+        return True
+    if cluster2.n_elements() == 0:
+        return True
+    for enc1 in cluster1.encodings_list:
+        for enc2 in cluster1.encodings_list:
+             if np.dot(enc1, enc2) > 80:
+                 return True
+    return False

@@ -2,10 +2,11 @@ import sys
 
 sys.path.append('.')
 import Packages.ClusteringHelper as ch
-from textdistance import DamerauLevenshtein
+from pyxdameraulevenshtein import damerau_levenshtein_distance
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering, DBSCAN
-from sklearn.metrics import pairwise_distances
+from scipy.spatial.distance import cdist
+
 
 def main():
     text, data = ch.read_aida_yago_conll(
@@ -15,20 +16,19 @@ def main():
     mentions = ents_data['mentions'].values
     mentions = [x.lower() for x in mentions]
 
-    def lev_metric(x, y):
-        i, j = int(x[0]), int(y[0])  # extract indices
-        if len(mentions[i]) < 4:
-            if mentions[i] == mentions[j]:
+    def distance(x, y):
+        x, y = x[0], y[0]
+        if len(x) < 4 or len(y) < 4:
+            if x == y:
                 return 0
             else:
-                return DamerauLevenshtein().distance(mentions[i].lower(), mentions[j].lower()) + 3
+                return damerau_levenshtein_distance(x, y) + 3
         else:
-            return DamerauLevenshtein().distance(mentions[i].lower(), mentions[j].lower())
+            return damerau_levenshtein_distance(x, y)
 
-    X = np.arange(len(mentions)).reshape(-1, 1)
+    mentions_reshaped = np.array(mentions).reshape(-1, 1)
     print("Inizio il pairwise")
-    m_matrix = pairwise_distances(X, X, metric=lev_metric, n_jobs=-1)
-    # clusterizator1 = DBSCAN(metric=lev_metric, eps=0.2, min_samples=0, n_jobs=-1)
+    m_matrix = cdist(mentions_reshaped, mentions_reshaped, metric=distance)
     print("Finito il pairwise")
 
     clusterizator1 = AgglomerativeClustering(n_clusters=None, affinity='precomputed',
