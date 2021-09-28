@@ -22,9 +22,9 @@ def main():
             if x == y:
                 return 0
             else:
-                return damerau_levenshtein_distance(x, y) + 3
+                return damerau_levenshtein_distance(x.lower(), y.lower()) + 3
         else:
-            return damerau_levenshtein_distance(x, y)
+            return damerau_levenshtein_distance(x.lower(), y.lower())
 
     mentions_reshaped = np.array(mentions).reshape(-1, 1)
     print("Inizio il pairwise")

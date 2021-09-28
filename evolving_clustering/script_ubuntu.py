@@ -4,8 +4,8 @@ import sys
 sys.path.append('.')
 
 import Packages.ClusteringHelper as ch
-from Packages.TimeEvolving import DataEvolver
-from textdistance import DamerauLevenshtein, Levenshtein, JaroWinkler
+from Packages.TimeEvolving import DataEvolver, compare_ecoding
+# from textdistance import DamerauLevenshtein, Levenshtein, JaroWinkler
 import numpy as np
 from sklearn.cluster import DBSCAN, AgglomerativeClustering
 from Packages.TimeEvolving import Cluster
@@ -13,7 +13,8 @@ from tqdm import tqdm
 import math
 from collections import Counter
 import datetime, time, os
-from sklearn.metrics.pairwise import pairwise_distances
+from scipy.spatial.distance import cdist
+from pyxdameraulevenshtein import damerau_levenshtein_distance
 
 
 def main(argv):
@@ -47,8 +48,9 @@ def main(argv):
         print('randomly:', randomly)
         print('Mean')
         print('Full_HAC')
-        print('Damerau = 1')
-        print('Threshold elimination cluster: 15 different mentions')
+        print('DamerauLevenshtein = 1')
+        # print('Threshold elimination cluster: 15 different mentions')
+        # print('Threshold dot_product')
         sys.stdout = original_stdout
     text, data = ch.read_aida_yago_conll(
         "./aida-yago2-dataset/AIDA-YAGO2-dataset.tsv")
@@ -74,35 +76,35 @@ def main(argv):
     tic = time.perf_counter()
     for iteration in tqdm(evolving, total=math.ceil(len(evolving.documents) / evolving.step)):
         current_mentions = list(evolving.get_current_data().mentions)
-        current_encodings = list(evolving.get_current_data()['encodings'].values)
-        current_entities = list(evolving.get_current_data()['entities'].values)
+        current_encodings = list(evolving.get_current_data()['encodings'])
+        current_entities = list(evolving.get_current_data()['entities'])
 
-        def lev_metric(x, y):
-            i, j = int(x[0]), int(y[0])  # extract indices
-            if len(current_mentions[i]) < 4:
-                if current_mentions[i] == current_mentions[j]:
-                    return 0
-                else:
-                    return Levenshtein().distance(current_mentions[i].lower(), current_mentions[j].lower()) + 3
-            else:
-                return Levenshtein().distance(current_mentions[i].lower(), current_mentions[j].lower())
+        # def lev_metric(x, y):
+        #     i, j = int(x[0]), int(y[0])  # extract indices
+        #     if len(current_mentions[i]) < 4:
+        #         if current_mentions[i] == current_mentions[j]:
+        #             return 0
+        #         else:
+        #             return Levenshtein().distance(current_mentions[i].lower(), current_mentions[j].lower()) + 3
+        #     else:
+        #         return Levenshtein().distance(current_mentions[i].lower(), current_mentions[j].lower())
 
         def dam_lev_metric(x, y):
-            i, j = int(x[0]), int(y[0])  # extract indices
+            i, j = x[0], y[0]
             if len(current_mentions[i]) < 4:
                 if current_mentions[i] == current_mentions[j]:
                     return 0
                 else:
-                    return DamerauLevenshtein().distance(current_mentions[i].lower(), current_mentions[j].lower()) + 3
+                    return damerau_levenshtein_distance(i.lower(), current_mentions[j].lower()) + 3
             else:
-                return DamerauLevenshtein().distance(current_mentions[i].lower(), current_mentions[j].lower())
+                return damerau_levenshtein_distance(i.lower(), j.lower())
 
-        def jw_lev_metric(x, y):
-            i, j = int(x[0]), int(y[0])  # extract indices
-            return JaroWinkler().distance(current_mentions[i].lower(), current_mentions[j].lower())
+        # def jw_lev_metric(x, y):
+        #     i, j = int(x[0]), int(y[0])  # extract indices
+        #     return JaroWinkler().distance(current_mentions[i].lower(), current_mentions[j].lower())
 
-        X = np.arange(len(current_mentions)).reshape(-1, 1)
-        m_matrix = pairwise_distances(X, X, metric=dam_lev_metric, n_jobs=-1)
+        X = np.array(current_mentions).reshape(-1, 1)
+        m_matrix = cdist(X, X, metric=dam_lev_metric)
         # clusterizator1 = DBSCAN(metric=dam_lev_metric, eps=1, min_samples=0, n_jobs=-1)
         clusterizator1 = AgglomerativeClustering(n_clusters=None, affinity='precomputed',
                                                  distance_threshold=0.2,
@@ -140,14 +142,17 @@ def main(argv):
                                                  linkage="single")
         cluster_numbers = clusterizator3.fit_predict(sotto_encodings)
         final_clusters = {k: Cluster() for k in set(cluster_numbers)}
+        last_key = list(set(final_clusters.keys()))[-1]
         for i, x in enumerate(current_clusters):
-            try:
+            if compare_ecoding(final_clusters[cluster_numbers[i]], x):
                 final_clusters[cluster_numbers[i]] = final_clusters[cluster_numbers[i]] + x
-            except:
-                print(cluster_numbers[i], final_clusters[cluster_numbers[i]], x)
+            else:
+                last_key = last_key + 1
+                final_clusters[last_key] = x
+
         gold_entities = gold_entities + current_entities
         total_clusters = list(final_clusters.values())
-        total_clusters = [x for x in total_clusters if len(set([men.lower() for men in x.mentions])) < 15]
+        # total_clusters = [x for x in total_clusters if len(set([men.lower() for men in x.mentions])) < 15]
 
         # BCUBED
         bcubed_precision, bcubed_recall = calcolo_b_cubed(total_clusters, gold_entities)
