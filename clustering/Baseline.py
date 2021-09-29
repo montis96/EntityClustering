@@ -2,48 +2,40 @@ import sys
 
 sys.path.append('.')
 import Packages.ClusteringHelper as ch
-from textdistance import DamerauLevenshtein
+from pyxdameraulevenshtein import damerau_levenshtein_distance
 import numpy as np
-from sklearn.cluster import AgglomerativeClustering
-from sklearn.metrics import pairwise_distances
+from sklearn.cluster import AgglomerativeClustering, DBSCAN
+from scipy.spatial.distance import cdist
+
 
 def main():
     text, data = ch.read_aida_yago_conll(
-        "D:\\Sgmon\\Documents\\Magistrale\\TESI\\ClusteringAndLinking\\aida-yago2-dataset\\AIDA-YAGO2-dataset.tsv")
-
-    data = ch.filter_data(data, 3)
-    n_entities = sum([x is not '' for x in list(data['entities'])])
-    n_ass_ents = sum([x is not '' for x in list(data['numeric_codes'])])
-    # n_tokens = sum([1 for x in list(data['entities'])])
-    n_tokens = sum([len(x.split()) for x in text])
-    golden_standard_dict = ch.get_gold_standard_dict(data)
+        "./aida-yago2-dataset/AIDA-YAGO2-dataset.tsv")
 
     ents_data = data[data['entities'] != '']
-    golden_standard_entities = ents_data['entities'].values
     mentions = ents_data['mentions'].values
     mentions = [x.lower() for x in mentions]
 
-    def lev_metric(x, y):
-        i, j = int(x[0]), int(y[0])  # extract indices
-        if len(mentions[i]) < 4:
-            if mentions[i] == mentions[j]:
+    def distance(x, y):
+        x, y = x[0], y[0]
+        if len(x) < 4 or len(y) < 4:
+            if x == y:
                 return 0
             else:
-                return DamerauLevenshtein().distance(mentions[i].lower(), mentions[j].lower()) + 3
+                return damerau_levenshtein_distance(x.lower(), y.lower()) + 3
         else:
-            return DamerauLevenshtein().distance(mentions[i].lower(), mentions[j].lower())
+            return damerau_levenshtein_distance(x.lower(), y.lower())
 
-    X = np.arange(len(mentions)).reshape(-1, 1)
+    mentions_reshaped = np.array(mentions).reshape(-1, 1)
     print("Inizio il pairwise")
-    m_matrix = pairwise_distances(X, X, metric=lev_metric, n_jobs=-1)
-    # clusterizator1 = DBSCAN(metric=dam_lev_metric, eps=1, min_samples=0, n_jobs=-1)
+    m_matrix = cdist(mentions_reshaped, mentions_reshaped, metric=distance)
     print("Finito il pairwise")
 
     clusterizator1 = AgglomerativeClustering(n_clusters=None, affinity='precomputed',
                                              distance_threshold=1,
                                              linkage="single")
     cluster_numbers = clusterizator1.fit_predict(m_matrix)
-    np.savetxt('db_cluster_dam_agglom.txt', cluster_numbers, delimiter=',')
+    np.savetxt('damerau_1.txt', cluster_numbers, delimiter=',')
 
 
 if __name__ == "__main__":
