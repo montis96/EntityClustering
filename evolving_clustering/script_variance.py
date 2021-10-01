@@ -20,15 +20,13 @@ from pyxdameraulevenshtein import damerau_levenshtein_distance
 def main(argv):
     original_stdout = sys.stdout
     now = datetime.datetime.now().strftime('%Y-%m-%d_%H_%M_%S')
-    opts, _ = getopt.getopt(argv, "s:f:e:r:d:t",
-                            ["step=", "first_threshold=", "second_threshold=", "randomly", "seed=", "entropy="])
+    opts, _ = getopt.getopt(argv, "s:f:e:r:d", ["step=", "first_threshold=", "second_threshold=", "randomly", "seed="])
     step = 10
     first_threshold = 0.035
     second_threshold = 0.015
-    entropy = 25
     seed = None
     randomly = False
-    os.makedirs("./Results/" + now)
+    os.makedirs(".\\Results\\" + now)
     for opt, arg in opts:
         if opt in ("-s", "--step"):
             step = int(arg)
@@ -38,12 +36,10 @@ def main(argv):
             second_threshold = float(arg)
         elif opt in ("-sd", "--seed"):
             seed = int(arg)
-        elif opt in ("-t", "--entropy"):
-            entropy = int(arg)
         elif opt in ("-r", "--randomly"):
             randomly = True
 
-    with open("./Results/" + now + "/settings.txt", "a") as f:
+    with open(".\\Results\\" + now + "\\settings.txt", "a") as f:
         sys.stdout = f
         print('step:', step)
         print('first_threshold:', first_threshold)
@@ -53,11 +49,11 @@ def main(argv):
         print('Mean')
         print('Full_HAC')
         print('DamerauLevenshtein = 1')
-        print('Threshold broke cluster: 25 different mentions')
+        print('Threshold broke cluster: 0.0005446195530711858 variance')
         # print('Threshold dot_product')
         sys.stdout = original_stdout
     text, data = ch.read_aida_yago_conll(
-        "./aida-yago2-dataset/AIDA-YAGO2-dataset.tsv")
+        ".\\aida-yago2-dataset\\AIDA-YAGO2-dataset.tsv")
     save = False
     if save:
         text_file = open('text.txt', 'w')
@@ -66,7 +62,7 @@ def main(argv):
     ents_data = data[data['entities'] != ''].copy()
 
     ents_data = ch.add_entities_embedding(ents_data,
-                                          "./aida-yago2-dataset/encodings")
+                                          ".\\aida-yago2-dataset\\encodings")
     # ents_data_filtered = ents_data.copy()
     documents = set(ents_data.documents)
 
@@ -78,7 +74,6 @@ def main(argv):
     ## Let the cycle start
 
     tic = time.perf_counter()
-    times = []
     for iteration in tqdm(evolving, total=math.ceil(len(evolving.documents) / evolving.step)):
         current_mentions = list(evolving.get_current_data().mentions)
         current_encodings = list(evolving.get_current_data()['encodings'])
@@ -147,7 +142,8 @@ def main(argv):
         broken_cluster = []
         to_remove_cluster = []
         for cl_index, cl in enumerate(total_clusters):
-            if len(set([men.lower() for men in cl.mentions])) > entropy:
+            matrix = cdist(cl.encodings_list, cl.encodings_list, metric='cosine')
+            if np.var(matrix) > 0.0005446195530711858:
                 X = np.array(cl.mentions).reshape(-1, 1)
                 m_sub_matrix = cdist(X, X, metric=dam_lev_metric)
                 br_clusterizator = AgglomerativeClustering(n_clusters=None, affinity='precomputed',
@@ -177,7 +173,7 @@ def main(argv):
         CEAFm_p = sum(best_alignment.values()) / len(gold_entities)
         CEAFm_r = sum(best_alignment.values()) / sum([x.n_elements() for x in total_clusters])
         CEAFm_f1 = 2 * (CEAFm_p * CEAFm_r) / (CEAFm_p + CEAFm_r)
-        with open("./Results/" + now + "/step" + str(n) + ".html", "a", encoding='utf-8') as f:
+        with open(".\\Results\\" + now + "\\step" + str(n) + ".html", "a", encoding='utf-8') as f:
             sys.stdout = f
             print('<html>')
             print("Documents:", iteration, '<br>')
@@ -188,7 +184,6 @@ def main(argv):
             print("bcubed_recall:", bcubed_recall)
             print("bcubed_precision:", bcubed_precision)
             print("bcubed_f1:", bcubed_f1)
-            print("<br> Time:", time.perf_counter() - tic, '<br>')
             print("<br>", "Clusters:", '<br>')
             print(*total_clusters, sep=" <br><br> ")
             print("<br>")
@@ -198,13 +193,11 @@ def main(argv):
             print('</html>')
             sys.stdout = original_stdout
         n = n + 1
-        times.append(time.perf_counter() - tic)
 
     toc = time.perf_counter()
-    with open("./Results/" + now + "/settings.txt", "a") as f:
+    with open(".\\Results\\" + now + "\\settings.txt", "a") as f:
         sys.stdout = f
         print('time:', toc - tic)
-        print("Times:", times)
         sys.stdout = original_stdout
     print("Time:", toc - tic)
 

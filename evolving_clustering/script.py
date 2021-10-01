@@ -20,10 +20,12 @@ from pyxdameraulevenshtein import damerau_levenshtein_distance
 def main(argv):
     original_stdout = sys.stdout
     now = datetime.datetime.now().strftime('%Y-%m-%d_%H_%M_%S')
-    opts, _ = getopt.getopt(argv, "s:f:e:r:d", ["step=", "first_threshold=", "second_threshold=", "randomly", "seed="])
+    opts, _ = getopt.getopt(argv, "s:f:e:r:d:t",
+                            ["step=", "first_threshold=", "second_threshold=", "randomly", "seed=", "entropy="])
     step = 10
     first_threshold = 0.035
     second_threshold = 0.015
+    entropy = 25
     seed = None
     randomly = False
     os.makedirs(".\\Results\\" + now)
@@ -36,6 +38,8 @@ def main(argv):
             second_threshold = float(arg)
         elif opt in ("-sd", "--seed"):
             seed = int(arg)
+        elif opt in ("-t", "--entropy"):
+            entropy = int(arg)
         elif opt in ("-r", "--randomly"):
             randomly = True
 
@@ -49,7 +53,7 @@ def main(argv):
         print('Mean')
         print('Full_HAC')
         print('DamerauLevenshtein = 1')
-        # print('Threshold elimination cluster: 15 different mentions')
+        print('Threshold broke cluster: 25 different mentions')
         # print('Threshold dot_product')
         sys.stdout = original_stdout
     text, data = ch.read_aida_yago_conll(
@@ -74,20 +78,11 @@ def main(argv):
     ## Let the cycle start
 
     tic = time.perf_counter()
+    times = []
     for iteration in tqdm(evolving, total=math.ceil(len(evolving.documents) / evolving.step)):
         current_mentions = list(evolving.get_current_data().mentions)
         current_encodings = list(evolving.get_current_data()['encodings'])
         current_entities = list(evolving.get_current_data()['entities'])
-
-        # def lev_metric(x, y):
-        #     i, j = int(x[0]), int(y[0])  # extract indices
-        #     if len(current_mentions[i]) < 4:
-        #         if current_mentions[i] == current_mentions[j]:
-        #             return 0
-        #         else:
-        #             return Levenshtein().distance(current_mentions[i].lower(), current_mentions[j].lower()) + 3
-        #     else:
-        #         return Levenshtein().distance(current_mentions[i].lower(), current_mentions[j].lower())
 
         def dam_lev_metric(x, y):
             i, j = x[0], y[0]
@@ -98,10 +93,6 @@ def main(argv):
                     return damerau_levenshtein_distance(i.lower(), j.lower()) + 3
             else:
                 return damerau_levenshtein_distance(i.lower(), j.lower())
-
-        # def jw_lev_metric(x, y):
-        #     i, j = int(x[0]), int(y[0])  # extract indices
-        #     return JaroWinkler().distance(current_mentions[i].lower(), current_mentions[j].lower())
 
         X = np.array(current_mentions).reshape(-1, 1)
         m_matrix = cdist(X, X, metric=dam_lev_metric)
@@ -152,10 +143,32 @@ def main(argv):
 
         gold_entities = gold_entities + current_entities
         total_clusters = list(final_clusters.values())
+
+        broken_cluster = []
+        to_remove_cluster = []
+        for cl_index, cl in enumerate(total_clusters):
+            if len(set([men.lower() for men in cl.mentions])) > entropy:
+                X = np.array(cl.mentions).reshape(-1, 1)
+                m_sub_matrix = cdist(X, X, metric=dam_lev_metric)
+                br_clusterizator = AgglomerativeClustering(n_clusters=None, affinity='precomputed',
+                                                           distance_threshold=0.2,
+                                                           linkage="single")
+                br_cluster_number = br_clusterizator.fit_predict(m_sub_matrix)
+
+                br_cluster_dict = {k: Cluster() for k in set(br_cluster_number)}
+                for i, cluster in enumerate(br_cluster_number):
+                    br_cluster_dict[cluster].add_element(cl.mentions[i], cl.entities[i], cl.encodings_list[i])
+
+                broken_cluster = broken_cluster + list(br_cluster_dict.values())
+                to_remove_cluster.append(cl_index)
+        for i in sorted(to_remove_cluster, reverse=True):
+            del total_clusters[i]
+        total_clusters = total_clusters + broken_cluster
+
         # total_clusters = [x for x in total_clusters if len(set([men.lower() for men in x.mentions])) < 15]
 
         # BCUBED
-        bcubed_precision, bcubed_recall = calcolo_b_cubed(total_clusters, gold_entities)
+        bcubed_precision, bcubed_recall = ch.calcolo_b_cubed(total_clusters, gold_entities)
         bcubed_f1 = (2 * (bcubed_recall * bcubed_precision)) / (bcubed_precision + bcubed_recall)
 
         # CEAFm
@@ -175,6 +188,7 @@ def main(argv):
             print("bcubed_recall:", bcubed_recall)
             print("bcubed_precision:", bcubed_precision)
             print("bcubed_f1:", bcubed_f1)
+            print("<br> Time:", time.perf_counter() - tic, '<br>')
             print("<br>", "Clusters:", '<br>')
             print(*total_clusters, sep=" <br><br> ")
             print("<br>")
@@ -184,33 +198,15 @@ def main(argv):
             print('</html>')
             sys.stdout = original_stdout
         n = n + 1
+        times.append(time.perf_counter() - tic)
 
     toc = time.perf_counter()
     with open(".\\Results\\" + now + "\\settings.txt", "a") as f:
         sys.stdout = f
         print('time:', toc - tic)
+        print("Times:", times)
         sys.stdout = original_stdout
     print("Time:", toc - tic)
-
-
-def calcolo_b_cubed(total_clusters, gold_entities):
-    list_of_counter = [x.count_ents() for x in total_clusters]
-    golden_standard_dict = Counter(gold_entities)
-    bcubed_precision_num = 0
-    bcubed_recall_num = 0
-    for cluster in list_of_counter:
-        for gold_key in golden_standard_dict.keys():
-            try:
-                bcubed_precision_num = bcubed_precision_num + (pow(cluster[gold_key], 2) /
-                                                               sum(cluster.values()))
-                bcubed_recall_num = bcubed_recall_num + (pow(cluster[gold_key], 2) /
-                                                         golden_standard_dict[gold_key])
-            except:
-                pass
-
-    bcubed_precision = bcubed_precision_num / sum([x.n_elements() for x in total_clusters])
-    bcubed_recall = bcubed_recall_num / len(gold_entities)
-    return bcubed_precision, bcubed_recall
 
 
 if __name__ == "__main__":

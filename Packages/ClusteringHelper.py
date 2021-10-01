@@ -245,3 +245,23 @@ def get_optimal_alignment(cluster, gold_entities, is_dict=True):
         max_lev_cluster_dict[ent_cluster_matrix.columns[ent_index]] = ent_cluster_matrix.iloc[
             best_alignment_cluster[i], best_alignment_ent[i]]
     return max_lev_cluster_dict
+
+
+def calcolo_b_cubed(total_clusters, gold_entities):
+    list_of_counter = [x.count_ents() for x in total_clusters]
+    golden_standard_dict = Counter(gold_entities)
+    bcubed_precision_num = 0
+    bcubed_recall_num = 0
+    for cluster in list_of_counter:
+        for gold_key in golden_standard_dict.keys():
+            try:
+                bcubed_precision_num = bcubed_precision_num + (pow(cluster[gold_key], 2) /
+                                                               sum(cluster.values()))
+                bcubed_recall_num = bcubed_recall_num + (pow(cluster[gold_key], 2) /
+                                                         golden_standard_dict[gold_key])
+            except:
+                pass
+
+    bcubed_precision = bcubed_precision_num / sum([x.n_elements() for x in total_clusters])
+    bcubed_recall = bcubed_recall_num / len(gold_entities)
+    return bcubed_precision, bcubed_recall
