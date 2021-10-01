@@ -53,7 +53,7 @@ def main(argv):
         print('Mean')
         print('Full_HAC')
         print('DamerauLevenshtein = 1')
-        print('Threshold broke cluster: 25 different mentions')
+        print('Threshold broke cluster: ', entropy)
         # print('Threshold dot_product')
         sys.stdout = original_stdout
     text, data = ch.read_aida_yago_conll(
