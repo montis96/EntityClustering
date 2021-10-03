@@ -94,13 +94,18 @@ def main(argv):
             else:
                 return damerau_levenshtein_distance(i.lower(), j.lower())
 
-        X = np.array(current_mentions).reshape(-1, 1)
-        m_matrix = cdist(X, X, metric=dam_lev_metric)
-        # clusterizator1 = DBSCAN(metric=dam_lev_metric, eps=1, min_samples=0, n_jobs=-1)
-        clusterizator1 = AgglomerativeClustering(n_clusters=None, affinity='precomputed',
-                                                 distance_threshold=0.2,
-                                                 linkage="single")
-        cluster_numbers = clusterizator1.fit_predict(m_matrix)
+        if len(current_mentions) == 1:
+            pass
+        if len(current_mentions) == 1:
+            cluster_numbers = np.zeros(1, dtype=np.int8)
+        else:
+            X = np.array(current_mentions).reshape(-1, 1)
+            m_matrix = cdist(X, X, metric=dam_lev_metric)
+            # clusterizator1 = DBSCAN(metric=dam_lev_metric, eps=1, min_samples=0, n_jobs=-1)
+            clusterizator1 = AgglomerativeClustering(n_clusters=None, affinity='precomputed',
+                                                     distance_threshold=1,
+                                                     linkage="single")
+            cluster_numbers = clusterizator1.fit_predict(m_matrix)
 
         cee_dict = {k: {'entities': [], 'mentions': [], 'encodings': [], 'sotto_clusters': None} for k in
                     set(cluster_numbers)}
@@ -128,10 +133,13 @@ def main(argv):
 
         current_clusters = total_clusters + sottocluster_list
         sotto_encodings = [x.encodings_mean() for x in current_clusters]
-        clusterizator3 = AgglomerativeClustering(n_clusters=None, affinity='cosine',
-                                                 distance_threshold=second_threshold,
-                                                 linkage="single")
-        cluster_numbers = clusterizator3.fit_predict(sotto_encodings)
+        if len(sotto_encodings) == 1:
+            cluster_numbers = np.zeros(1, dtype=np.int8)
+        else:
+            clusterizator3 = AgglomerativeClustering(n_clusters=None, affinity='cosine',
+                                                     distance_threshold=second_threshold,
+                                                     linkage="single")
+            cluster_numbers = clusterizator3.fit_predict(sotto_encodings)
         final_clusters = {k: Cluster() for k in set(cluster_numbers)}
         last_key = list(set(final_clusters.keys()))[-1]
         for i, x in enumerate(current_clusters):
@@ -151,7 +159,7 @@ def main(argv):
                 X = np.array(cl.mentions).reshape(-1, 1)
                 m_sub_matrix = cdist(X, X, metric=dam_lev_metric)
                 br_clusterizator = AgglomerativeClustering(n_clusters=None, affinity='precomputed',
-                                                           distance_threshold=0.2,
+                                                           distance_threshold=1,
                                                            linkage="single")
                 br_cluster_number = br_clusterizator.fit_predict(m_sub_matrix)
 
