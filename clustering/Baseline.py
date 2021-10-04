@@ -6,9 +6,12 @@ from pyxdameraulevenshtein import damerau_levenshtein_distance
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering, DBSCAN
 from scipy.spatial.distance import cdist
+import time
 
 
 def main():
+    tic = time.perf_counter()
+
     text, data = ch.read_aida_yago_conll(
         "./aida-yago2-dataset/AIDA-YAGO2-dataset.tsv")
 
@@ -35,6 +38,7 @@ def main():
                                              distance_threshold=1.2,
                                              linkage="single")
     cluster_numbers = clusterizator1.fit_predict(m_matrix)
+    print(time.perf_counter() - tic)
     np.savetxt('damerau_1.txt', cluster_numbers, delimiter=',')
 
 
