@@ -103,7 +103,7 @@ def main(argv):
             m_matrix = cdist(X, X, metric=dam_lev_metric)
             # clusterizator1 = DBSCAN(metric=dam_lev_metric, eps=1, min_samples=0, n_jobs=-1)
             clusterizator1 = AgglomerativeClustering(n_clusters=None, affinity='precomputed',
-                                                     distance_threshold=1,
+                                                     distance_threshold=1.2,
                                                      linkage="single")
             cluster_numbers = clusterizator1.fit_predict(m_matrix)
 
@@ -159,7 +159,7 @@ def main(argv):
                 X = np.array(cl.mentions).reshape(-1, 1)
                 m_sub_matrix = cdist(X, X, metric=dam_lev_metric)
                 br_clusterizator = AgglomerativeClustering(n_clusters=None, affinity='precomputed',
-                                                           distance_threshold=1,
+                                                           distance_threshold=1.2,
                                                            linkage="single")
                 br_cluster_number = br_clusterizator.fit_predict(m_sub_matrix)
 
