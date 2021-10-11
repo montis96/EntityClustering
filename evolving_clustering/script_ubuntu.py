@@ -141,11 +141,14 @@ def main(argv):
                                                      linkage="single")
             cluster_numbers = clusterizator3.fit_predict(sotto_encodings)
         final_clusters = {k: Cluster() for k in set(cluster_numbers)}
+
         last_key = list(set(final_clusters.keys()))[-1]
+
         for i, x in enumerate(current_clusters):
             if compare_ecoding(final_clusters[cluster_numbers[i]], x):
                 final_clusters[cluster_numbers[i]] = final_clusters[cluster_numbers[i]] + x
             else:
+                print('dentro')
                 last_key = last_key + 1
                 final_clusters[last_key] = x
 
